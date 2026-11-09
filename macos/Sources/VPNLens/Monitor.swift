@@ -41,8 +41,8 @@ final class Monitor {
         didSet { UserDefaults.standard.set(showSystemServices, forKey: Keys.services) }
     }
 
-    /// Спрашивать ещё и ip.nic.ru. По умолчанию - при регионе Россия или русском интерфейсе: там VPN-клиенты
-    /// часто пускают зону .ru мимо сервера, и без этого сайта такие правила не видны.
+    /// Спрашивать ещё и ip.nic.ru. Выключено по умолчанию: нужно тем, чей VPN-клиент пускает
+    /// сайты в зоне .ru другим путём, - без такого сайта эти правила не видны.
     var regionalSite: Bool {
         didSet {
             UserDefaults.standard.set(regionalSite, forKey: Keys.regional)
@@ -93,8 +93,7 @@ final class Monitor {
         appGuard = AppGuard(notifier: notifier, history: history)
         checksOnline = UserDefaults.standard.object(forKey: Keys.online) as? Bool ?? true
         showSystemServices = UserDefaults.standard.bool(forKey: Keys.services)
-        regionalSite = UserDefaults.standard.object(forKey: Keys.regional) as? Bool
-            ?? (Locale.current.region?.identifier == "RU" || AppLanguage.current == .ru)
+        regionalSite = UserDefaults.standard.bool(forKey: Keys.regional)
         frontmost = Self.otherFrontmostApp()
 
         activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -316,7 +315,7 @@ final class Monitor {
                let webkit = snapshot.apps.first(where: { $0.name == Self.webKitNetworking }) {
                 current = webkit
             }
-            self.apps = snapshot.apps
+            self.apps = Demo.enabled ? Demo.anonymize(snapshot.apps) : snapshot.apps
             if pid == self.frontmost?.processIdentifier {
                 self.app = current
             }

@@ -10,6 +10,20 @@ enum Demo {
     private static let fakeAddresses = ["203.0.113.24", "198.51.100.7", "203.0.113.80", "198.51.100.42"]
     private static let fakeClient = "ExampleVPN"
 
+    /// Процесс VPN-клиента в списке программ называется по имени клиента: его тоже прячем.
+    static func anonymize(_ apps: [AppNetwork]) -> [AppNetwork] {
+        apps.map { app in
+            guard app.isVpnClient else { return app }
+            var copy = app
+            copy.name = fakeClient
+            return copy
+        }
+    }
+
+    /// Разделы окна для GIF: без «Истории» и «Сети», там настоящие адреса локальной сети.
+    static let tourSections: [WindowSection] = [.overview, .apps, .protection, .checks]
+    static let tourStep: Duration = .seconds(2.5)
+
     static func anonymize(_ report: NetworkReport) -> NetworkReport {
         var real: [String] = []
         let remember = { (ip: String?) in

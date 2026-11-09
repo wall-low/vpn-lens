@@ -51,7 +51,7 @@
 "Если VPN отключится" = "If the VPN disconnects";
 "Если VPN отключится, VPN Lens заморозит или закроет эти программы и возобновит замороженные, когда VPN вернётся. Safari не поддерживается: его сеть идёт через общий процесс WebKit." = "If the VPN disconnects, VPN Lens freezes or quits these apps and resumes the frozen ones when the VPN is back. Safari isn't supported: its traffic goes through a shared WebKit process.";
 "Если VPN отключится, VPN Lens сразу остановит выбранные приложения." = "If the VPN disconnects, VPN Lens immediately stops the selected apps.";
-"Если VPN-клиент пускает российские сайты мимо сервера, так будет видно, что адрес зависит от сайта." = "If your VPN client routes Russian sites around the server, this shows that the address depends on the site.";
+"Если VPN-клиент пускает сайты в зоне .ru другим путём, так будет видно, что адрес зависит от сайта." = "If your VPN client routes .ru sites differently, this shows that the address depends on the site.";
 "Есть риск" = "At risk";
 "Есть соединения напрямую через Wi-Fi, а проверить, выпускает ли VPN трафик мимо себя, не удалось." = "There are direct connections over Wi-Fi, and VPN Lens couldn't check whether the VPN lets traffic around it.";
 "Есть трафик мимо VPN" = "Traffic bypasses the VPN";
@@ -212,3 +212,7 @@
 "этот компьютер" = "this Mac";
 "О программе VPN Lens" = "About VPN Lens";
 "Исходный код и описание:" = "Source code and docs:";
+"Язык интерфейса" = "Language";
+"Как в системе" = "System default";
+"Язык сменится после перезапуска VPN Lens." = "The language changes after VPN Lens restarts.";
+"Перезапустить" = "Restart";

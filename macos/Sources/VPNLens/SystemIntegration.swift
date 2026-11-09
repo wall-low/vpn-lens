@@ -115,3 +115,61 @@ enum About {
         NSApp.orderFrontStandardAboutPanel(options: [.credits: credits])
     }
 }
+
+/// Язык интерфейса. Как и у системных программ, хранится в AppleLanguages в домене
+/// самого приложения и применяется при следующем запуске.
+enum LanguageChoice: String, CaseIterable, Identifiable {
+    case system, ru, en
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .system: String(localized: "Как в системе")
+        // Название языка - на самом языке, как в системных настройках.
+        case .ru: "Русский"
+        case .en: "English"
+        }
+    }
+
+    static var saved: LanguageChoice {
+        guard let id = Bundle.main.bundleIdentifier,
+              let own = UserDefaults.standard.persistentDomain(forName: id)?["AppleLanguages"] as? [String],
+              let first = own.first
+        else { return .system }
+        return first.hasPrefix("en") ? .en : first.hasPrefix("ru") ? .ru : .system
+    }
+
+    func apply() {
+        switch self {
+        case .system: UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+        case .ru, .en: UserDefaults.standard.set([rawValue], forKey: "AppleLanguages")
+        }
+    }
+
+    /// Какой язык выберет macOS для «Как в системе»: первый из языков системы, который
+    /// есть в приложении. Если ни одного нет - русский, язык разработки.
+    static var systemResolved: LanguageChoice {
+        let system = UserDefaults(suiteName: UserDefaults.globalDomain)?.stringArray(forKey: "AppleLanguages") ?? []
+        let pick = Bundle.preferredLocalizations(from: ["ru", "en"], forPreferences: system).first
+        return pick == "en" ? .en : .ru
+    }
+
+    /// Язык, с которым приложение запущено сейчас.
+    static var running: LanguageChoice {
+        AppLanguage.current == .en ? .en : .ru
+    }
+}
+
+/// Перезапуск приложения: новый экземпляр стартует, когда этот уже закрылся,
+/// чтобы в строке меню не было двух иконок и защита не сработала дважды.
+@MainActor
+enum Relaunch {
+    static func now() {
+        let path = Bundle.main.bundlePath
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/sh")
+        task.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", path]
+        try? task.run()
+        NSApp.terminate(nil)
+    }
+}

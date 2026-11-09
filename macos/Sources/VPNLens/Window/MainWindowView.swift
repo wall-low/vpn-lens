@@ -49,6 +49,15 @@ struct MainWindowView: View {
         }
         // Заголовок на уровне всего окна: внутри разделов его перебивают поиск и тулбары.
         .navigationTitle((navigation.section ?? .overview).title)
+        .task {
+            // `--tour`: разделы по очереди, для GIF в README.
+            guard CommandLine.arguments.contains("--tour") else { return }
+            try? await Task.sleep(for: .seconds(4))
+            for section in Demo.tourSections + [Demo.tourSections[0]] {
+                navigation.section = section
+                try? await Task.sleep(for: Demo.tourStep)
+            }
+        }
         .sheet(isPresented: $navigation.showOnboarding) {
             OnboardingSheet(monitor: monitor) {
                 UserDefaults.standard.set(true, forKey: "onboarded")

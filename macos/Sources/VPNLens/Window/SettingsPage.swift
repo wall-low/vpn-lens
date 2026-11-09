@@ -10,6 +10,13 @@ struct SettingsPage: View {
     @State private var hotKey = HotKeyOption.saved
     @State private var badge = UserDefaults.standard.bool(forKey: "windowBadge")
     @State private var confirmForget = false
+    @State private var language = LanguageChoice.saved
+
+    /// Выбранный язык отличается от того, с которым приложение запущено.
+    private var needsRestart: Bool {
+        let wanted = language == .system ? LanguageChoice.systemResolved : language
+        return wanted != LanguageChoice.running
+    }
 
     var body: some View {
         Form {
@@ -25,6 +32,20 @@ struct SettingsPage: View {
                     Text(String(localized: "Разрешите запуск в Системных настройках → Основные → Объекты входа."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
+                Picker(String(localized: "Язык интерфейса"), selection: $language) {
+                    ForEach(LanguageChoice.allCases) { Text(verbatim: $0.title).tag($0) }
+                }
+                .onChange(of: language) { _, choice in choice.apply() }
+                if needsRestart {
+                    HStack {
+                        Text(String(localized: "Язык сменится после перезапуска VPN Lens."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button(String(localized: "Перезапустить")) { Relaunch.now() }
+                            .controlSize(.small)
+                    }
+                }
                 Picker(String(localized: "Открыть меню VPN Lens сочетанием"), selection: $hotKey) {
                     ForEach(HotKeyOption.allCases) { Text($0.title).tag($0) }
                 }
@@ -34,7 +55,7 @@ struct SettingsPage: View {
             Section {
                 Toggle(String(localized: "Проверять через интернет"), isOn: $monitor.checksOnline)
                 Toggle(String(localized: "Проверять ещё и региональный сайт (ip.nic.ru)"), isOn: $monitor.regionalSite)
-                    .help(String(localized: "Если VPN-клиент пускает российские сайты мимо сервера, так будет видно, что адрес зависит от сайта."))
+                    .help(String(localized: "Если VPN-клиент пускает сайты в зоне .ru другим путём, так будет видно, что адрес зависит от сайта."))
                 Toggle(String(localized: "Показывать службы macOS"), isOn: $monitor.showSystemServices)
                 Toggle(String(localized: "Плашка в углу активного окна"), isOn: $badge)
                     .onChange(of: badge) { _, on in AppDelegate.shared?.badge?.enabled = on }
