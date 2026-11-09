@@ -1,0 +1,8 @@
+/target
+/build
+/macos/.build
+/macos/Generated
+/macos/Frameworks
+/macos/Sources/VPNLensCore/vpnlens_core.swift
+.DS_Store
+/macos/.swiftpm
