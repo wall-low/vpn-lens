@@ -1,0 +1,12 @@
+[package]
+name = "vpnlens-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "vpnlens"
+path = "src/main.rs"
+
+[dependencies]
+vpnlens-core = { path = "../core" }
