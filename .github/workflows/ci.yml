@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy,rustfmt
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Формат и линтер
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Тесты ядра
+        run: cargo test --workspace
+
+      - name: Сборка приложения (Apple Silicon + Intel)
+        run: scripts/build-app.sh --universal --zip
+
+      - name: Тесты Swift
+        run: swift test --package-path macos
+
+      - name: Перевод
+        run: scripts/check-localization.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VPN-Lens
+          path: |
+            build/VPN-Lens-*.zip
+            build/VPN-Lens-*.zip.sha256

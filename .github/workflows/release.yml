@@ -1,0 +1,38 @@
+name: Release
+
+# Тег вида v0.1.0 собирает приложение и создаёт черновик релиза.
+# Черновик, а не сразу публикация: описание и файлы стоит проверить руками.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - name: Версия в Info.plist совпадает с тегом
+        run: |
+          plist=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" macos/Info.plist)
+          test "v$plist" = "$GITHUB_REF_NAME" || { echo "тег $GITHUB_REF_NAME, а в Info.plist $plist"; exit 1; }
+
+      - name: Сборка
+        run: scripts/build-app.sh --universal --zip
+
+      - name: Черновик релиза
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '$0 ~ "^## \\[?" v {found=1; next} found && /^## / {exit} found' CHANGELOG.md > notes.md
+          gh release create "$GITHUB_REF_NAME" --draft --title "VPN Lens $version" --notes-file notes.md \
+            "build/VPN-Lens-$version.zip" "build/VPN-Lens-$version.zip.sha256"
