@@ -11,7 +11,6 @@ let package = Package(
         .target(
             name: "VPNLensCore",
             dependencies: ["VPNLensCoreFFI"],
-            swiftSettings: [.swiftLanguageMode(.v5)],
             linkerSettings: [.linkedFramework("SystemConfiguration")]
         ),
         // Логика без AppKit и системных вызовов: её проверяют тесты.
