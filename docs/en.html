@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VPN Lens</title>
+  <meta name="description" content="A macOS menu bar utility: if your VPN drops, the apps you pick won't go online with your real address.">
+  <link rel="icon" href="icon.png">
+  <link rel="alternate" hreflang="ru" href="./">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="en.html"><img src="icon.png" alt="">VPN Lens</a>
+    <div class="links">
+      <a href="#install">Install</a>
+      <a href="#privacy">Privacy</a>
+      <a href="https://github.com/wall-low/vpn-lens">GitHub</a>
+      <a href="./" hreflang="ru">Русский</a>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <img class="icon" src="icon.png" alt="">
+      <h1>Your VPN dropped for a second, and your apps were already online with your real address</h1>
+      <p class="lead">VPN Lens watches the VPN and the apps you pick. The moment the VPN connection drops, it freezes or quits those apps. When the VPN is back, frozen apps resume on their own.</p>
+      <div class="actions">
+        <a class="button" href="https://github.com/wall-low/vpn-lens/releases/latest">Download for macOS</a>
+        <span class="brew"><span id="brew">brew install --cask wall-low/tap/vpn-lens</span><button type="button" data-copy="brew">Copy</button></span>
+      </div>
+      <p class="meta">Free and open source. macOS 14 and later, Apple Silicon and Intel.</p>
+    </header>
+
+    <div class="demo">
+      <img src="demo-en.gif" alt="The VPN Lens window: overview, apps, protection, checks" width="820">
+    </div>
+
+    <div class="features">
+      <div class="card">
+        <h3>Protection on disconnect</h3>
+        <p>Pick the apps that must never go online without the VPN, and whether to freeze or quit them. The choice is remembered per app.</p>
+      </div>
+      <div class="card">
+        <h3>See how every app connects</h3>
+        <p>Through the VPN, around it, or partly around it, and what address sites see. For the active app in the menu, for all of them in the window.</p>
+      </div>
+      <div class="card">
+        <h3>Leak checks</h3>
+        <p>Tunnel bypass, WebRTC, IPv6 and DNS. Only what a measurement confirms is marked red.</p>
+      </div>
+    </div>
+    <p class="note">Protection fires on the system's network-change event, and the freeze itself takes microseconds. But it isn't a network filter: something may slip out before the event arrives. For added protection, also turn on your VPN client's own kill switch.</p>
+
+    <section>
+      <h2>Right in the menu bar</h2>
+      <div class="shots">
+        <img src="menu-en.png" width="320" alt="The VPN Lens menu">
+      </div>
+      <p>The shield in the menu bar shows the overall result. Click it for a summary of the app you're working in: whether it goes through the VPN, what address sites see, and what to do with it if the VPN disconnects. Notifications arrive when the VPN disconnects while apps keep working.</p>
+    </section>
+
+    <section id="install">
+      <h2>Install</h2>
+      <ol>
+        <li>Install with Homebrew using the command above, or download the archive from <a href="https://github.com/wall-low/vpn-lens/releases/latest">Releases</a> and move "VPN Lens" to Applications.</li>
+        <li>The app isn't notarized by Apple, so macOS blocks it on first launch. Open System Settings &gt; Privacy &amp; Security and click "Open Anyway" next to VPN Lens. You only need to do this once.</li>
+        <li>After that VPN Lens lives in the menu bar. Open at login, language and a keyboard shortcut are in Settings.</li>
+      </ol>
+    </section>
+
+    <section id="privacy">
+      <h2>Privacy</h2>
+      <p>No telemetry. Nothing about your apps or connections leaves your Mac. To learn your external address and check the network, VPN Lens sends requests to test services such as <code>cloudflare.com</code> and <code>ipify.org</code>. One switch turns off all online checks. Exactly where, when and what each service can see, and what's stored on your Mac, is in the <a href="https://github.com/wall-low/vpn-lens/blob/main/README.en.md#privacy">README</a>.</p>
+    </section>
+
+    <section>
+      <h2>Open source</h2>
+      <p>A Rust core, a SwiftUI interface, MIT license. How the checks work, and why a connection over Wi-Fi doesn't by itself mean traffic bypasses the VPN, is in the <a href="https://github.com/wall-low/vpn-lens/blob/main/docs/ARCHITECTURE.en.md">architecture notes</a>.</p>
+    </section>
+  </main>
+
+  <footer>
+    <span>VPN Lens · MIT</span>
+    <span><a href="https://github.com/wall-low/vpn-lens">GitHub</a> · <a href="https://github.com/wall-low/vpn-lens/issues">Report an issue</a> · <a href="./" hreflang="ru">Русский</a></span>
+  </footer>
+
+  <script>
+    document.querySelectorAll("[data-copy]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var text = document.getElementById(button.dataset.copy).textContent;
+        var done = function () {
+          var label = button.textContent;
+          button.textContent = "Copied";
+          setTimeout(function () { button.textContent = label; }, 1400);
+        };
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text).then(done, function () {});
+        }
+      });
+    });
+  </script>
+</body>
+</html>
