@@ -1,0 +1,14 @@
+name: Идея / Idea
+description: Чего не хватает / What's missing
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какую задачу хотите решить / What problem do you want to solve
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Как это могло бы выглядеть / How it could look

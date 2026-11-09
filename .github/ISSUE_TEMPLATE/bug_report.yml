@@ -1,0 +1,32 @@
+name: Ошибка / Bug
+description: Что-то работает не так / Something doesn't work right
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Что случилось / What happened
+      description: И что вы ожидали увидеть / And what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Как повторить / Steps to reproduce
+  - type: input
+    id: versions
+    attributes:
+      label: Версии VPN Lens и macOS / VPN Lens and macOS versions
+      placeholder: 0.1.0, macOS 15.7
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: VPN-клиент / VPN client
+  - type: textarea
+    id: report
+    attributes:
+      label: Отчёт / Report
+      description: Меню VPN Lens → «Скопировать отчёт», без адресов, которыми не хотите делиться. / VPN Lens menu → "Copy Report", without addresses you don't want to share.
+      render: text

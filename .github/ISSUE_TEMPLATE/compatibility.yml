@@ -1,0 +1,48 @@
+name: Совместимость с VPN / VPN compatibility
+description: Как VPN Lens работает с вашим VPN-клиентом / How VPN Lens works with your VPN client
+labels: [compatibility]
+body:
+  - type: input
+    id: client
+    attributes:
+      label: VPN-клиент и версия / VPN client and version
+      placeholder: WireGuard 1.0.16
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Режим / Mode
+      options:
+        - Полный туннель / Full tunnel
+        - Раздельный туннель / Split tunnel
+        - Только системный прокси / System proxy only
+        - Туннель и прокси / Tunnel and proxy
+        - Не знаю / Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Верно ли VPN Lens показал, что происходит? / Did VPN Lens get it right?
+      options:
+        - Да / Yes
+        - Частично / Partly
+        - Нет / No
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Отчёт / Report
+      description: Меню VPN Lens → «Скопировать отчёт». Уберите адреса, которыми не хотите делиться. / VPN Lens menu → "Copy Report". Remove addresses you don't want to share.
+      render: text
+  - type: textarea
+    id: notes
+    attributes:
+      label: Что было не так / What was off
+  - type: input
+    id: macos
+    attributes:
+      label: macOS
+      placeholder: "15.7"
