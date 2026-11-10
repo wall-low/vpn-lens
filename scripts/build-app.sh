@@ -36,12 +36,12 @@ if [ "$UNIVERSAL" = 1 ]; then
         -output target/universal/libvpnlens_core.a
     STATIC="$ROOT/target/universal/libvpnlens_core.a"
     DYLIB="$ROOT/target/aarch64-apple-darwin/release/libvpnlens_core.dylib"
-    SWIFT_ARCHS="--arch arm64 --arch x86_64"
+    SWIFT_TRIPLES="arm64-apple-macosx14.0 x86_64-apple-macosx14.0"
 else
     cargo build -p vpnlens-core --release
     STATIC="$ROOT/target/release/libvpnlens_core.a"
     DYLIB="$ROOT/target/release/libvpnlens_core.dylib"
-    SWIFT_ARCHS=""
+    SWIFT_TRIPLES=""
 fi
 
 echo "== uniffi"
@@ -61,10 +61,24 @@ xcodebuild -create-xcframework -library "$STATIC" -headers "$HEADERS" \
     -output "$MACOS/Frameworks/VPNLensCoreFFI.xcframework" >/dev/null
 
 echo "== swift"
-# shellcheck disable=SC2086 # архитектуры передаются отдельными аргументами
-swift build -c release --package-path "$MACOS" $SWIFT_ARCHS
-# shellcheck disable=SC2086
-BIN="$(swift build -c release --package-path "$MACOS" $SWIFT_ARCHS --show-bin-path)/VPNLens"
+if [ -n "$SWIFT_TRIPLES" ]; then
+    # Каждая архитектура отдельно, потом lipo. С "--arch arm64 --arch x86_64" SwiftPM
+    # собирает через xcbuild, а компоновщик Xcode 16 падает на его склеенном модуле.
+    BIN="$ROOT/target/universal/VPNLens"
+    rm -f "$BIN"
+    for triple in $SWIFT_TRIPLES; do
+        swift build -c release --package-path "$MACOS" --triple "$triple"
+        SLICE="$(swift build -c release --package-path "$MACOS" --triple "$triple" --show-bin-path)/VPNLens"
+        if [ -f "$BIN" ]; then
+            lipo -create "$BIN" "$SLICE" -output "$BIN"
+        else
+            cp "$SLICE" "$BIN"
+        fi
+    done
+else
+    swift build -c release --package-path "$MACOS"
+    BIN="$(swift build -c release --package-path "$MACOS" --show-bin-path)/VPNLens"
+fi
 
 echo "== bundle"
 APP="$ROOT/build/VPN Lens.app"
