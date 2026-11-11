@@ -38,8 +38,13 @@ VPN Lens следит за VPN и за программами, которые в
 Через Homebrew:
 
 ```sh
+brew trust --cask wall-low/tap/vpn-lens
 brew install --cask wall-low/tap/vpn-lens
 ```
+
+Homebrew 7 загружает программы из сторонних репозиториев только после `brew trust`.
+Команда разрешает один этот cask, а не весь репозиторий. В Homebrew до версии 7 её нет,
+там достаточно второй строки.
 
 Или вручную: скачайте `VPN-Lens-*.zip` из [релизов](https://github.com/wall-low/vpn-lens/releases/latest)
 и перенесите «VPN Lens» в «Программы».

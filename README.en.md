@@ -37,8 +37,13 @@ Requires macOS 14 or later, Apple Silicon or Intel.
 With Homebrew:
 
 ```sh
+brew trust --cask wall-low/tap/vpn-lens
 brew install --cask wall-low/tap/vpn-lens
 ```
+
+Homebrew 7 loads software from third-party taps only after `brew trust`. The command trusts
+this one cask, not the whole tap. Homebrew before 7 has no such command; the second line is
+enough there.
 
 Or manually: download `VPN-Lens-*.zip` from [Releases](https://github.com/wall-low/vpn-lens/releases/latest)
 and move "VPN Lens" to Applications.

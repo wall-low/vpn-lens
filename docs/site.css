@@ -74,8 +74,11 @@ nav a:hover { color: var(--fg); }
   padding: 10px 14px;
   border-radius: 12px;
   background: var(--code);
-  font: 14px/1.4 ui-monospace, "SF Mono", Menlo, monospace;
+  font: 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+  max-width: 100%;
+  text-align: left;
 }
+#brew { white-space: pre-wrap; overflow-wrap: anywhere; }
 .brew button {
   border: 0;
   background: none;

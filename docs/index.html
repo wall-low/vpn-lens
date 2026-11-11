@@ -27,7 +27,8 @@
       <p class="lead">VPN Lens следит за VPN и за программами, которые вы выбрали. Если соединение с VPN пропадает, он сразу замораживает или закрывает эти программы. Когда VPN вернётся, замороженные программы продолжат работу сами.</p>
       <div class="actions">
         <a class="button" href="https://github.com/wall-low/vpn-lens/releases/latest">Скачать для macOS</a>
-        <span class="brew"><span id="brew">brew install --cask wall-low/tap/vpn-lens</span><button type="button" data-copy="brew">Скопировать</button></span>
+        <span class="brew"><span id="brew">brew trust --cask wall-low/tap/vpn-lens
+brew install --cask wall-low/tap/vpn-lens</span><button type="button" data-copy="brew">Скопировать</button></span>
       </div>
       <p class="meta">Бесплатно и с открытым кодом. macOS 14 и новее, Apple Silicon и Intel.</p>
     </header>
@@ -63,7 +64,7 @@
     <section id="install">
       <h2>Установка</h2>
       <ol>
-        <li>Установите через Homebrew командой выше или скачайте архив из <a href="https://github.com/wall-low/vpn-lens/releases/latest">релизов</a> и перенесите «VPN Lens» в «Программы».</li>
+        <li>Установите через Homebrew командами выше (<code>brew trust</code> нужен в Homebrew 7 и новее) или скачайте архив из <a href="https://github.com/wall-low/vpn-lens/releases/latest">релизов</a> и перенесите «VPN Lens» в «Программы».</li>
         <li>Приложение не нотаризовано Apple, поэтому при первом запуске macOS его заблокирует. Откройте «Системные настройки → Конфиденциальность и безопасность» и нажмите «Открыть всё равно» напротив VPN Lens. Это нужно один раз.</li>
         <li>Дальше VPN Lens живёт в строке меню. Запуск при входе, язык и горячая клавиша - в настройках.</li>
       </ol>
