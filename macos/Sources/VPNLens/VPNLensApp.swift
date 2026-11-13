@@ -24,11 +24,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var badge: BadgeController?
     private(set) var windows: WindowController?
     private(set) var hotKey: HotKey?
+    private var signalSources: [DispatchSourceSignal] = []
+
+    /// `kill`, выход из системы через launchd, Ctrl+C: закрываемся как обычно, чтобы
+    /// сработал applicationWillTerminate и замороженные программы не остались стоять.
+    private func handleTerminationSignals() {
+        for number in [SIGTERM, SIGINT, SIGHUP] {
+            signal(number, SIG_IGN)
+            let source = DispatchSource.makeSignalSource(signal: number, queue: .main)
+            source.setEventHandler { MainActor.assumeIsolated { NSApp.terminate(nil) } }
+            source.resume()
+            signalSources.append(source)
+        }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // В .app это делает LSUIElement, а здесь - для запуска через `swift run`.
         NSApp.setActivationPolicy(.accessory)
         Self.shared = self
+        handleTerminationSignals()
         Migration.run()
 
         let monitor = Monitor()

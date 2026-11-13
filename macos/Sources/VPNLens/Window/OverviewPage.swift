@@ -25,7 +25,8 @@ struct OverviewPage: View {
                             Text(exit.kind.title)
                         }
                     }
-                    if report.exits.count > 1 {
+                    // Адрес запроса в обход туннеля - не правило для сайтов, его не считаем.
+                    if report.exits.filter({ $0.paths.contains { $0 != .physical } }).count > 1 {
                         Text(String(localized: "Адрес зависит от сайта: VPN-клиент пускает часть сайтов другим путём."))
                             .font(.caption)
                             .foregroundStyle(.secondary)

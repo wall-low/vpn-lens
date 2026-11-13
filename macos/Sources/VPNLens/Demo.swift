@@ -5,7 +5,7 @@ import VPNLensCore
 /// и обезличить VPN-клиента. Только для скриншотов в README, чтобы не публиковать
 /// свой IP и адрес VPN-сервера.
 enum Demo {
-    static let enabled = CommandLine.arguments.contains("--demo")
+    static let enabled = CommandLine.arguments.contains("--demo") || Promo.enabled
 
     private static let fakeAddresses = ["203.0.113.24", "198.51.100.7", "203.0.113.80", "198.51.100.42"]
     private static let fakeClient = "ExampleVPN"

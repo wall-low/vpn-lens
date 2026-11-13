@@ -33,7 +33,7 @@ struct AppsPage: View {
         Table(items, selection: $navigation.selectedApp) {
             TableColumn(String(localized: "Приложение")) { item in
                 HStack(spacing: 8) {
-                    AppIcon(app: item.app.runningApp).frame(width: 18, height: 18)
+                    NetworkAppIcon(app: item.app).frame(width: 18, height: 18)
                     Text(item.app.displayName)
                 }
             }
@@ -123,7 +123,7 @@ private struct AppInspector: View {
         Form {
             Section {
                 HStack(spacing: 10) {
-                    AppIcon(app: app.runningApp).frame(width: 32, height: 32)
+                    NetworkAppIcon(app: app).frame(width: 32, height: 32)
                     VStack(alignment: .leading) {
                         Text(app.displayName).font(.headline)
                         if let p = verdict?.protection {

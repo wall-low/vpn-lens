@@ -115,14 +115,35 @@ final class Monitor {
     }
 
     func panelOpened() {
+        menuOpen = true
+        watched()
+    }
+
+    func panelClosed() {
+        menuOpen = false
+        schedule(interval: windowOpen ? Self.openInterval : Self.closedInterval)
+    }
+
+    /// Окно VPN Lens тоже показывает соединения: пока оно открыто, обновляем так же часто.
+    func windowOpened() {
+        windowOpen = true
+        watched()
+    }
+
+    func windowClosed() {
+        windowOpen = false
+        schedule(interval: menuOpen ? Self.openInterval : Self.closedInterval)
+    }
+
+    private var menuOpen = false
+    private var windowOpen = false
+
+    /// На данные начали смотреть: сразу свежий снимок и частый опрос.
+    private func watched() {
         schedule(interval: Self.openInterval)
         refreshApps()
         let stale = inspectedAt.map { Date().timeIntervalSince($0) > Self.reportMaxAge } ?? true
         if stale { inspect() }
-    }
-
-    func panelClosed() {
-        schedule(interval: Self.closedInterval)
     }
 
     private func schedule(interval: TimeInterval) {
@@ -165,8 +186,9 @@ final class Monitor {
             return
         }
         var result: [UInt32: AppVerdict] = [:]
-        for app in apps { result[app.pid] = appVerdict(app: app, report: report) }
-        if let app { result[app.pid] = appVerdict(app: app, report: report) }
+        let verdict = { (app: AppNetwork) in Promo.enabled ? Promo.verdict(for: app) : appVerdict(app: app, report: report) }
+        for app in apps { result[app.pid] = verdict(app) }
+        if let app { result[app.pid] = verdict(app) }
         verdicts = result
         noticeExposedApps()
     }
@@ -195,12 +217,17 @@ final class Monitor {
                 self.inspect()
                 return
             }
+            // Проверки через интернет выключили, пока шла эта: её результат уже не нужен.
+            guard self.checksOnline else { return }
             let previous = self.report
-            self.report = Demo.enabled ? Demo.anonymize(report) : report
+            let shown = Promo.enabled ? Promo.adjust(Demo.anonymize(report))
+                : Demo.enabled ? Demo.anonymize(report) : report
+            self.report = shown
             self.inspectedAt = Date()
             self.rememberProvider(from: report)
             self.recomputeVerdicts()
-            self.recordChanges(from: previous, to: report)
+            // В историю идёт то же, что на экране: в --demo там не должно быть настоящих адресов.
+            self.recordChanges(from: previous, to: shown)
         }
     }
 
@@ -216,7 +243,7 @@ final class Monitor {
 
     private func recordChanges(from old: NetworkReport?, to new: NetworkReport) {
         // Первая проверка после запуска VPN Lens - это не событие: сравнивать не с чем.
-        guard let old else { return }
+        guard let old, !Promo.enabled else { return }
         let wasActive: Bool? = old.vpn.active
         if wasActive != new.vpn.active {
             if new.vpn.active {
@@ -263,7 +290,7 @@ final class Monitor {
 
     /// Программа начала ходить мимо VPN: пишем в историю и сообщаем.
     private func noticeExposedApps() {
-        guard report?.vpn.active == true, !killSwitch.isRunning else {
+        guard report?.vpn.active == true, !killSwitch.isRunning, !Promo.enabled else {
             exposedNames = []
             return
         }
@@ -308,7 +335,11 @@ final class Monitor {
         let generation = refreshGeneration
         Task {
             let snapshot = await Task.detached { try? appsSnapshot(focusPid: pid.map { UInt32($0) }) }.value
-            guard generation == self.refreshGeneration, let snapshot else { return }
+            guard generation == self.refreshGeneration, var snapshot else { return }
+            if Promo.enabled {
+                let apps = Promo.apps
+                snapshot = AppsSnapshot(apps: apps, focus: apps.first { $0.pid == pid.map(UInt32.init) })
+            }
             var current = snapshot.focus
             // Сеть Safari живёт в отдельном XPC-сервисе, который запускает launchd.
             if usesWebKitNetworking, (current?.summary.external ?? 0) == 0,

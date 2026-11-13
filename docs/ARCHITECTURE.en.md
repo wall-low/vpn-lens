@@ -141,7 +141,9 @@ App flags for debugging and screenshots:
 - `--snapshot menu.png --app Safari` renders the menu to a file;
 - `--demo` replaces real addresses with documentation ones (RFC 5737); every screenshot in the
   README was made this way;
-- `--tour` together with `--window` shows the window's sections in turn, for the GIF.
+- `--tour` together with `--window` shows the window's sections in turn, for the GIF;
+- `--promo apps|drop` shows a fixed list of apps instead of real connections, and tripped
+  protection (`drop`), for the promo video. The real protection list and history are untouched.
 
 A `vX.Y.Z` tag builds a universal archive and creates a draft release with notes from the
 CHANGELOG. After the release is published, `scripts/update-cask.sh X.Y.Z` updates the Homebrew

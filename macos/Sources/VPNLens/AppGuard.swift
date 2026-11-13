@@ -65,6 +65,8 @@ final class AppGuard {
     private static let treeRefreshEvery = 6
     /// Сколько дать VPN устояться после возвращения, прежде чем отпускать приложения.
     private static let resumeDelay: Duration = .seconds(2)
+    /// Сколько ждать, пока программа закроется сама, прежде чем заморозить её.
+    private static let quitGrace: Duration = .seconds(3)
 
     private enum Keys {
         static let list = "guardedApps"
@@ -79,6 +81,7 @@ final class AppGuard {
     private var launchObserver: NSObjectProtocol?
     private var resumeTask: Task<Void, Never>?
     private var checking = false
+    private var recheck = false
     /// Заранее известные помощники защищённых приложений: при сбое замораживаем их
     /// сразу, не тратя ~10 мс на обход дерева процессов. Обновляется раз в 30 секунд.
     private var treeCache: [Int32: [Int32]] = [:]
@@ -100,6 +103,12 @@ final class AppGuard {
         self.notifier = notifier
         self.history = history
         defaultMode = Mode(rawValue: UserDefaults.standard.string(forKey: Keys.mode) ?? "") ?? .freeze
+        // Съёмка ролика: ни настоящего списка, ни слежения за сетью.
+        if let stage = Promo.stage {
+            guarded = Promo.guarded
+            state = stage == .drop ? .tripped(frozen: guarded.map(\.name), closed: []) : .armed
+            return
+        }
         if let data = UserDefaults.standard.data(forKey: Keys.list),
            let list = try? JSONDecoder().decode([Guarded].self, from: data) {
             guarded = list
@@ -168,6 +177,9 @@ final class AppGuard {
                 kill(pid, SIGCONT)
                 frozen[pid] = nil
             }
+            if case .tripped(let frozenNames, let closedNames) = state {
+                state = .tripped(frozen: frozenNames.filter { $0 != name }, closed: closedNames)
+            }
         }
         save()
     }
@@ -211,12 +223,22 @@ final class AppGuard {
     // MARK: Реакция на VPN
 
     func check() {
-        guard !guarded.isEmpty, !checking else { return }
+        guard !guarded.isEmpty else { return }
+        // Событие сети пришло, пока идёт проверка: её ответ может быть уже устаревшим,
+        // поэтому сразу после неё проверяем ещё раз, а не ждём запасного таймера.
+        guard !checking else {
+            recheck = true
+            return
+        }
         checking = true
         Task {
             let up = await Task.detached { quickVpnUp(state: quickVpn()) }.value
             checking = false
             handle(vpnUp: up)
+            if recheck {
+                recheck = false
+                check()
+            }
         }
     }
 
@@ -278,11 +300,13 @@ final class AppGuard {
     private func stop(_ apps: [NSRunningApplication]) {
         // 1. Сразу: главные процессы и заранее известные помощники. Микросекунды.
         var names: [Int32: String] = [:]
+        var quitting: [NSRunningApplication] = []
         for app in apps {
             let name = app.localizedName ?? app.bundleIdentifier ?? "?"
             switch mode(for: app) {
             case .quit:
                 app.terminate()
+                quitting.append(app)
             case .freeze:
                 let main = app.processIdentifier
                 names[main] = name
@@ -294,6 +318,32 @@ final class AppGuard {
             }
         }
         // 2. Следом: помощники, которые появились после последнего обновления списка.
+        freezeHelpers(of: names)
+        // 3. Программа может не закрыться: например, спрашивает, сохранить ли документ,
+        // и всё это время остаётся в сети. Тогда замораживаем её, данные при этом целы.
+        guard !quitting.isEmpty else { return }
+        Task {
+            try? await Task.sleep(for: Self.quitGrace)
+            guard case .tripped(var frozenNames, var closedNames) = state else { return }
+            var stuck: [Int32: String] = [:]
+            for app in quitting where !app.isTerminated {
+                let name = app.localizedName ?? app.bundleIdentifier ?? "?"
+                let main = app.processIdentifier
+                guard kill(main, SIGSTOP) == 0 else { continue }
+                frozen[main] = name
+                stuck[main] = name
+                closedNames.removeAll { $0 == name }
+                if !frozenNames.contains(name) { frozenNames.append(name) }
+                history.add(.killSwitch, String(localized: "\(name) не закрылся, заморожен"))
+            }
+            guard !stuck.isEmpty else { return }
+            state = .tripped(frozen: frozenNames, closed: closedNames)
+            freezeHelpers(of: stuck)
+        }
+    }
+
+    /// Останавливает потомков уже замороженных программ: pid главного процесса -> имя.
+    private func freezeHelpers(of names: [Int32: String]) {
         let mains = Array(names.keys)
         guard !mains.isEmpty else { return }
         Task {
@@ -301,6 +351,8 @@ final class AppGuard {
                 mains.map { ($0, processDescendants(pid: UInt32($0)).map { Int32($0) }) }
             }.value
             for (main, children) in fresh {
+                // Пока искали потомков, программу могли отпустить: тогда их не трогаем.
+                guard frozen[main] != nil else { continue }
                 for pid in children where frozen[pid] == nil && kill(pid, SIGSTOP) == 0 {
                     frozen[pid] = names[main]
                 }

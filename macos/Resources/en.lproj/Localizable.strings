@@ -5,6 +5,7 @@
 " и ещё %lld" = " and %lld more";
 "%@ ходит мимо VPN" = "%@ bypasses the VPN";
 "%@. Разморожены: %@" = "%@. Resumed: %@";
+"%@ не закрылся, заморожен" = "%@ did not quit and was frozen";
 ", сайты видели %@" = ", sites saw %@";
 "DNS не утекает" = "DNS does not leak";
 "Kill switch должен отрезать интернет, если VPN внезапно упадёт. Отключите VPN так, как будто он упал: например, закройте VPN-клиент через Мониторинг системы. Обычное выключение кнопкой многие клиенты не считают сбоем." = "A kill switch should cut the internet if the VPN suddenly drops. Turn the VPN off as if it crashed, for example quit the VPN client in Activity Monitor. Many clients don't treat a normal disconnect as a failure.";

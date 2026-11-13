@@ -60,7 +60,17 @@ pub fn format(report: &NetworkReport, apps: &[AppNetwork], l: Lang) -> String {
         })
         .collect();
     let _ = writeln!(out, "\n{}", t!(l, "Приложения:", "Apps:"));
-    if problems.is_empty() {
+    if !vpn.active {
+        let _ = writeln!(
+            out,
+            "- {}",
+            t!(
+                l,
+                "VPN не включён: все программы выходят с адресом провайдера",
+                "VPN is off: every app goes out with the provider's address"
+            )
+        );
+    } else if problems.is_empty() {
         let _ = writeln!(
             out,
             "- {}",
@@ -72,4 +82,25 @@ pub fn format(report: &NetworkReport, apps: &[AppNetwork], l: Lang) -> String {
         }
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::VpnState;
+
+    #[test]
+    fn without_vpn_does_not_claim_protection() {
+        let report = NetworkReport {
+            vpn: VpnState::default(),
+            probes: vec![],
+            exits: vec![],
+            checks: vec![],
+            provider_ip: None,
+            bypass_blocked: None,
+        };
+        let text = format(&report, &[], Lang::Ru);
+        assert!(text.contains("VPN не включён"), "{text}");
+        assert!(!text.contains("идут через VPN"), "{text}");
+    }
 }

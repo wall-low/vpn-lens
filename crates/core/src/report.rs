@@ -42,26 +42,34 @@ pub fn vpn_state(snapshot: &Snapshot, ifaces: &[NetInterface]) -> VpnState {
 
     let network_id = physical.as_deref().and_then(crate::netid::network_id);
     // Прокси на этом компьютере, а порт никто не слушает: клиент упал, хоть настройка и осталась.
-    let local_proxy = proxy.endpoints.iter().any(|e| proxy::is_local_host(&e.host));
-    let proxy_dead = local_proxy && owner.is_none();
+    // Сокеты чужих процессов (root, системное расширение) в снимке не видны, поэтому
+    // прежде чем объявить прокси мёртвым, пробуем к нему подключиться.
+    let proxy_dead = owner.is_none() && local_proxy_alive(&proxy) == Some(false);
     let active = !tunnels.is_empty() || (proxy.is_enabled() && !proxy_dead);
     VpnState { active, tunnels, proxy, client, physical, network_id, proxy_dead }
 }
 
-/// Туннели по списку интерфейсов и пробное подключение к локальному прокси.
-pub fn quick_vpn() -> QuickVpn {
-    use std::net::{SocketAddr, TcpStream};
+/// Отвечает ли локальный прокси на своём порту. None - прокси не на этом компьютере.
+fn local_proxy_alive(settings: &crate::model::ProxySettings) -> Option<bool> {
+    use std::net::{Ipv6Addr, SocketAddr, TcpStream};
     use std::time::Duration;
 
+    let local: Vec<u16> = settings.endpoints.iter().filter(|e| proxy::is_local_host(&e.host)).map(|e| e.port).collect();
+    (!local.is_empty()).then(|| {
+        local.iter().any(|port| {
+            // Клиент может слушать только IPv4 или только IPv6.
+            [SocketAddr::from(([127, 0, 0, 1], *port)), SocketAddr::from((Ipv6Addr::LOCALHOST, *port))]
+                .iter()
+                .any(|addr| TcpStream::connect_timeout(addr, Duration::from_millis(300)).is_ok())
+        })
+    })
+}
+
+/// Туннели по списку интерфейсов и пробное подключение к локальному прокси.
+pub fn quick_vpn() -> QuickVpn {
     let tunnels = interfaces::tunnel_names();
     let settings = proxy::system();
-    let local: Vec<u16> = settings.endpoints.iter().filter(|e| proxy::is_local_host(&e.host)).map(|e| e.port).collect();
-    let proxy_alive = (!local.is_empty()).then(|| {
-        local.iter().any(|port| {
-            let addr = SocketAddr::from(([127, 0, 0, 1], *port));
-            TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok()
-        })
-    });
+    let proxy_alive = local_proxy_alive(&settings);
     QuickVpn { tunnels, proxy_configured: settings.is_enabled(), proxy_alive }
 }
 
@@ -470,8 +478,10 @@ pub(crate) fn check_ipv6(
             t!(l, "IPv6 перекрыт", "IPv6 is blocked"),
             t!(
                 l,
-                format!("У {phys} есть IPv6, но выйти через него не удалось: VPN его не выпускает."),
-                format!("{phys} has IPv6, but nothing got out through it: the VPN blocks it.")
+                format!("У {phys} есть IPv6, но запрос по IPv6 не прошёл: сейчас через него ничего не выходит."),
+                format!(
+                    "{phys} has IPv6, but an IPv6 request did not get through: nothing goes out over it right now."
+                )
             ),
             None,
         ),

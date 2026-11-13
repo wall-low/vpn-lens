@@ -26,7 +26,7 @@ macro_rules! t {
 fn main() -> ExitCode {
     let l = lang();
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let options = InspectOptions { lang: l, regional_site: l == Lang::Ru || args.iter().any(|a| a == "--regional") };
+    let options = InspectOptions { lang: l, regional_site: args.iter().any(|a| a == "--regional") };
     let result = match args.first().map(String::as_str) {
         None | Some("--regional") => summary(l, Some(options)),
         Some("--offline") => summary(l, None),

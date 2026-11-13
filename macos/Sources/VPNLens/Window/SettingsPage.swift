@@ -23,6 +23,9 @@ struct SettingsPage: View {
             Section(String(localized: "Основные")) {
                 Toggle(String(localized: "Запускать VPN Lens при входе в систему"), isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, on in
+                        // Возврат переключателя после ошибки снова вызывает этот блок:
+                        // без проверки вторая ошибка затёрла бы текст первой.
+                        guard on != LoginItem.enabled else { return }
                         loginError = LoginItem.set(on)
                         launchAtLogin = LoginItem.enabled
                     }

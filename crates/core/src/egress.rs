@@ -1,6 +1,7 @@
 use std::net::{IpAddr, Ipv4Addr};
 use std::time::Duration;
 
+use ureq::config::IpFamily;
 use ureq::{Agent, Proxy};
 
 use crate::model::{EgressPath, EgressProbe, ProxyKind, ProxySettings};
@@ -15,7 +16,7 @@ const SITES: &[Site] = &[
 ];
 
 /// Региональный сайт: в России VPN-клиенты часто пускают зону .ru мимо сервера.
-/// Включается настройкой, по умолчанию - когда регион системы Россия.
+/// Только по настройке, по умолчанию выключен.
 const REGIONAL_SITE: Site = Site { host: "ip.nic.ru", url: "https://ip.nic.ru/", format: Format::FirstIpv4 };
 
 /// Для пути мимо туннеля нужен адрес без DNS: туннель может подменять ответы DNS.
@@ -66,7 +67,12 @@ pub fn probe_all(proxy_settings: &ProxySettings, physical: Option<&str>, regiona
 
 /// Один быстрый запрос обычным путём: жив ли интернет и с каким адресом.
 pub fn quick_default() -> Option<String> {
-    let agent = Agent::config_builder().timeout_global(Some(Duration::from_secs(3))).proxy(None).build().new_agent();
+    let agent = Agent::config_builder()
+        .timeout_global(Some(Duration::from_secs(3)))
+        .ip_family(IpFamily::Ipv4Only)
+        .proxy(None)
+        .build()
+        .new_agent();
     let body = agent.get(SITES[0].url).call().ok()?.body_mut().read_to_string().ok()?;
     parse_trace(&body).0
 }
@@ -74,6 +80,10 @@ pub fn quick_default() -> Option<String> {
 fn agent(proxy: Option<Proxy>) -> Agent {
     Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(6)))
+        // Только IPv4. Запрос в обход туннеля идёт на IPv4-адрес, и сравнивать его можно
+        // лишь с IPv4-адресом VPN: иначе у VPN с IPv6 адреса не совпадут, и получится
+        // ложное "мимо VPN выйти можно". IPv6 проверяется отдельно.
+        .ip_family(IpFamily::Ipv4Only)
         // Без явного None ureq подхватит HTTP(S)_PROXY из окружения.
         .proxy(proxy)
         .build()

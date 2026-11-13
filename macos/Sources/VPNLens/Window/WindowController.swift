@@ -58,6 +58,7 @@ final class WindowController: NSObject, NSWindowDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate()
         window.makeKeyAndOrderFront(nil)
+        monitor.windowOpened()
     }
 
     private func makeWindow() -> NSWindow {
@@ -80,5 +81,6 @@ final class WindowController: NSObject, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         // Окно закрыли - VPN Lens снова живёт только в строке меню.
         NSApp.setActivationPolicy(.accessory)
+        monitor.windowClosed()
     }
 }

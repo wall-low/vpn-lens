@@ -120,14 +120,24 @@ impl Snapshot {
 }
 
 fn is_vpn_client_process(p: &Proc) -> bool {
-    // Network Extension на macOS живёт в .appex или .systemextension.
-    if let Some(exe) = &p.exe
-        && (exe.contains(".appex/") || exe.contains(".systemextension/"))
-    {
+    const NAMES: &[&str] = &["packettunnel", "networkextension", "openvpn", "wireguard", "tailscaled"];
+    // Слова в пути расширения, по которым видно, что оно держит туннель или прокси.
+    const EXTENSION_HINTS: &[&str] =
+        &["tunnel", "vpn", "networkextension", "network-extension", "wireguard", "proxy", "tailscale"];
+
+    let name = p.name.to_lowercase();
+    if NAMES.iter().any(|k| name.contains(k)) {
         return true;
     }
-    let name = p.name.to_lowercase();
-    ["packettunnel", "networkextension", "openvpn", "wireguard", "tailscaled"].iter().any(|k| name.contains(k))
+    // Network Extension на macOS живёт в .appex или .systemextension. Но .appex - это ещё
+    // и виджеты, расширения Safari, "Поделиться": их соединения напрямую - не туннель,
+    // и прятать их под "VPN-клиент" нельзя. Поэтому смотрим на название расширения.
+    let Some(exe) = p.exe.as_deref().map(str::to_lowercase) else { return false };
+    let extension = [".appex/", ".systemextension/"].iter().find_map(|ext| {
+        let end = exe.find(ext)?;
+        Some(&exe[exe[..end].rfind('/').map_or(0, |i| i + 1)..end])
+    });
+    extension.is_some_and(|ext| EXTENSION_HINTS.iter().any(|hint| ext.contains(hint)))
 }
 
 /// Службы macOS: сами по себе не интересны, пока не ходят мимо VPN.
@@ -375,6 +385,29 @@ mod tests {
             exe: Some("/Applications/X.app/Contents/PlugIns/Tunnel.appex/Contents/MacOS/Tunnel".into()),
         };
         assert!(is_vpn_client_process(&ext));
+        // Виджет или расширение "Поделиться" - не VPN-клиент, даже если ходит в сеть.
+        let widget = Proc {
+            name: "WeatherWidget".into(),
+            parent: Some(1),
+            exe: Some("/Applications/X.app/Contents/PlugIns/WeatherWidget.appex/Contents/MacOS/WeatherWidget".into()),
+        };
+        assert!(!is_vpn_client_process(&widget));
+        // Слово в пути приложения, а не расширения, не считается.
+        let share = Proc {
+            name: "Share".into(),
+            parent: Some(1),
+            exe: Some("/Applications/Some VPN.app/Contents/PlugIns/Share.appex/Contents/MacOS/Share".into()),
+        };
+        assert!(!is_vpn_client_process(&share));
+        let sysext = Proc {
+            name: "x".into(),
+            parent: Some(1),
+            exe: Some(
+                "/Library/SystemExtensions/AB/com.example.vpn.network-extension.systemextension/Contents/MacOS/x"
+                    .into(),
+            ),
+        };
+        assert!(is_vpn_client_process(&sysext));
         assert!(is_vpn_client_process(&proc("ExamplePacketTunnel", 1)));
         assert!(is_vpn_client_process(&proc("openvpn", 1)));
         assert!(!is_vpn_client_process(&proc("Google Chrome", 1)));
