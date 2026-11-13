@@ -1114,7 +1114,7 @@ dependencies = [
 
 [[package]]
 name = "uniffi-bindgen"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "uniffi",
 ]
@@ -1267,14 +1267,14 @@ checksum = "b8c0a043c9540bae7c578c88f91dda8bd82e59ae27c21baca69c8b191aaf5a6e"
 
 [[package]]
 name = "vpnlens-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "vpnlens-core",
 ]
 
 [[package]]
 name = "vpnlens-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "core-foundation",
  "if-addrs",
